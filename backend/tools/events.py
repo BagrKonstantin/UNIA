@@ -15,8 +15,8 @@ def request_events():
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            with open("events.html", "w", encoding="utf-8") as file:
-                file.write(response.text)
+            # with open("events.html", "w", encoding="utf-8") as file:
+            #     file.write(response.text)
             return response.text
         else:
             print(f"Error: {response.status_code}")
@@ -43,11 +43,11 @@ import json
 from collections import defaultdict
 
 def get_events_for_this_month():
-    request_events()
+    html_content = request_events()
     # Load the HTML content
-    file_path = 'events.html'
-    with open(file_path, 'r', encoding='utf-8') as file:
-        html_content = file.read()
+    # file_path = 'events.html'
+    # with open(file_path, 'r', encoding='utf-8') as file:
+    #     html_content = file.read()
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
@@ -112,11 +112,6 @@ def get_events_for_this_month():
 
     # Convert defaultdict to a standard dict for JSON serialization
     final_json_data = dict(events_by_date)
-
-    # Output the results to a file
-    # output_file = 'events_by_date.json'
-    # with open(output_file, 'w', encoding='utf-8') as f:
-    #     json.dump(final_json_data, f, indent=4)
 
     print(f"Successfully grouped events for {len(final_json_data)} unique dates.")
     return final_json_data
