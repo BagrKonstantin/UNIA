@@ -1,9 +1,11 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_ollama import ChatOllama
 import uuid
+from datetime import datetime
 
 # Tool imports
 from tools.schedule import get_user_schedule
@@ -43,13 +45,21 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
     lc_messages = []
+    
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_day = now.strftime("%A")
+    
     # Persona definition
     lc_messages.append(SystemMessage(content=(
-        "You are an AI assistant for university students at uni.lu"
+        "You are an AI assistant for university students at uni.lu. "
         "You help students with schedules, answering questions about university life, accommodation, "
         "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
         "finding events, finding mental health consultants, and building transit routes via Mobiliteit API. "
-        "Always use your tools to provide actual, helpful data. If you register or book something, confirm it."
+        "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
+        "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
+        "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
+        f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
     )))
     
     for m in req.messages:
@@ -89,3 +99,8 @@ async def chat_endpoint(req: ChatRequest):
         "role": "assistant",
         "content": response.content
     }
+
+
+if __name__ == "__main__":
+    # Use the string "main:app" for reload to work correctly
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
