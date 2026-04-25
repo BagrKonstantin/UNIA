@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 # LLM initialized with the specific Gemma version chosen
-llm = ChatOllama(model="gemma-4-26b-a4b-thinking", temperature=0)
+llm = ChatOllama(model="gemma4:e4b", temperature=0)
 
 tools = [
     get_user_schedule,
@@ -45,7 +45,7 @@ async def chat_endpoint(req: ChatRequest):
     lc_messages = []
     # Persona definition
     lc_messages.append(SystemMessage(content=(
-        "You are an AI assistant for university students at uni.lu, participating in a hackathon. "
+        "You are an AI assistant for university students at uni.lu"
         "You help students with schedules, answering questions about university life, accommodation, "
         "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
         "finding events, finding mental health consultants, and building transit routes via Mobiliteit API. "
