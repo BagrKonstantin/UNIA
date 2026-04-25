@@ -15,7 +15,6 @@ def request_events():
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            # Save the HTML content to a file named 'menu.html'
             with open("events.html", "w", encoding="utf-8") as file:
                 file.write(response.text)
             return response.text
@@ -26,6 +25,18 @@ def request_events():
     except Exception as e:
         print(f"Error saving file: {e}")
 
+def request_event(url):
+    try:
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            return response.text
+        else:
+            print(f"Error: {response.status_code}")
+            print(response.text)
+
+    except Exception as e:
+        print(f"Error saving file: {e}")
 
 from bs4 import BeautifulSoup
 import json
@@ -166,3 +177,54 @@ def get_upcoming_events(start_date: Optional[str] = None, end_date: Optional[str
     import json
     return json.dumps(filter_upcoming_events(get_events_for_this_month(), start_date, end_date))
 
+
+
+
+
+def parse_event_data(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Extract Title from the <h1> with entry-title class
+    title = soup.find('h1', class_='entry-title').get_text(strip=True)
+
+    # Extract Date and Time from the em-event-info div
+    # In this file, date and time are inside <li> tags within em-event-info
+    event_info = soup.find('div', class_='em-event-info')
+    date = "Not found"
+    time = "Not found"
+    if event_info:
+        list_items = event_info.find_all('li')
+        for item in list_items:
+            text = item.get_text(strip=True)
+            if "Date:" in text:
+                date = text.replace("Date:", "").strip()
+            elif "Time:" in text:
+                time = text.replace("Time:", "").strip()
+
+    # Extract Location from the em-location-data div
+    location_div = soup.find('div', class_='em-location-data')
+    location = location_div.get_text(strip=True) if location_div else "Not found"
+
+    # Extract Full Description (usually in the entry-content div)
+    description_div = soup.find('div', class_='entry-content')
+    description = description_div.get_text(separator='\n', strip=True) if description_div else "Not found"
+
+    return {
+        "title": title,
+        "date": date,
+        "time": time,
+        "location": location,
+        "description": description
+    }
+
+@tool
+def get_event_details(url: str) -> str:
+    """
+    Get detailed information about a specific event using its URL.
+    Use this tool when the user asks for more details (like description or exact location) about an event you listed.
+    """
+    import json
+    html = request_event(url)
+    if html:
+        return json.dumps(parse_event_data(html))
+    return json.dumps({"error": "Event details not found."})

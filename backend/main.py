@@ -11,7 +11,7 @@ from datetime import datetime
 from tools.schedule import get_user_schedule
 from tools.restopolis import get_canteen_menu
 from tools.affluences import get_available_activities, book_resource
-from tools.events import get_upcoming_events
+from tools.events import get_upcoming_events, get_event_details
 from tools.health import get_mental_health_specialists
 from tools.mobility import get_transit_route
 
@@ -33,6 +33,7 @@ tools = [
     get_available_activities,
     book_resource,
     get_upcoming_events,
+    get_event_details,
     get_mental_health_specialists,
     get_transit_route,
 ]
