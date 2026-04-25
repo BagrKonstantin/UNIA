@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
 
 :root {
-  --bg-color: #fceceb; /* Soft gray/off-white background */
+  --bg-color: #fceceb;
+  /* Soft gray/off-white background */
   --text-primary: #1f1f1f;
   --text-secondary: #444746;
   --accent-unilu-blue: #1E3446;
@@ -34,7 +35,8 @@ body {
   margin: 0 20px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 12px; /* Much less roundy, squarer style */
+  border-radius: 12px;
+  /* Much less roundy, squarer style */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -79,7 +81,8 @@ body {
   color: var(--text-secondary);
   background: #f8f9fa;
   padding: 6px 12px;
-  border-radius: 6px; /* Boxier badge */
+  border-radius: 6px;
+  /* Boxier badge */
   border: 1px solid var(--glass-border);
 }
 
@@ -92,8 +95,15 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .5;
+  }
 }
 
 .chat-container {
@@ -103,7 +113,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: #f8f9fa; /* slightly darker chat background area for depth */
+  background: #f8f9fa;
+  /* slightly darker chat background area for depth */
 }
 
 .message {
@@ -118,20 +129,23 @@ body {
 
 .message.user {
   align-self: flex-end;
-  background: #e8eaed; /* Soft gray background like Gemini input echoes */
+  background: #e8eaed;
+  /* Soft gray background like Gemini input echoes */
   color: var(--text-primary);
   padding: 14px 18px;
-  border-radius: 12px 12px 4px 12px; /* Slight bubble point, squared-off */
+  border-radius: 12px 12px 4px 12px;
+  /* Slight bubble point, squared-off */
 }
 
 .message.assistant {
   align-self: flex-start;
-  background: #ffffff; /* White background for assistant card */
+  background: #ffffff;
+  /* White background for assistant card */
   border: 1px solid var(--glass-border);
   color: var(--text-primary);
   padding: 16px 20px;
   border-radius: 12px 12px 12px 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .message.tool {
@@ -165,7 +179,8 @@ body {
   flex: 1;
   background: #f8f9fa;
   border: 1px solid var(--glass-border);
-  border-radius: 12px; /* Squarer, input box style */
+  border-radius: 12px;
+  /* Squarer, input box style */
   padding: 16px 18px;
   color: var(--text-primary);
   font-family: inherit;
@@ -188,7 +203,8 @@ body {
   background: var(--accent-unilu-red);
   color: white;
   border: none;
-  border-radius: 12px; /* Rounded square button */
+  border-radius: 12px;
+  /* Rounded square button */
   width: 52px;
   height: 52px;
   display: flex;
