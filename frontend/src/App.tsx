@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import './index.css';
 
-// For simplicity and custom premium styling without Tailwind, 
-// we will build a custom chat interface replicating the assistant-ui experience
-// communicating natively with our Python backend without the complex wrapper.
+// Custom interface for the unilu Assistant 
 
 type Message = {
   role: 'user' | 'assistant' | 'tool';
@@ -15,7 +14,7 @@ type Message = {
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Hi! I'm your Uni.lu Hackathon Assistant powered by Gemma. I can help with your schedule, find food on campus, book sports, and more. How can I assist you today?" }
+    { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -51,19 +50,17 @@ function App() {
       if (!response.ok) throw new Error("Network response was not ok");
 
       const data = await response.json();
-      
-      // Support for naive backend response rendering tool usage
+
       if (data.tool_results && data.tool_results.length > 0) {
-        // Append tools as messages, followed by final answer if any
         setMessages(prev => [
-            ...prev, 
-            ...data.tool_results.map((t: any) => ({ role: 'tool' as const, content: `[Executed Tool] ${t.content}`})),
-            { role: 'assistant', content: data.content || "Done! Is there anything else you need?" }
+          ...prev,
+          ...data.tool_results.map((t: any) => ({ role: 'tool' as const, content: `[Executed Tool] ${t.content}` })),
+          { role: 'assistant', content: data.content || "Done! Is there anything else you need?" }
         ]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
       }
-      
+
     } catch (error) {
       console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, the backend seems unavailable. Make sure your Python server is running!" }]);
@@ -75,9 +72,11 @@ function App() {
   return (
     <div className="app-wrapper">
       <header className="header">
-        <div className="header-title">
-          <Sparkles size={24} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'middle' }} />
-          Uni.lu AI Agent
+        <div className="header-title-container">
+          <img src="/logo.png" alt="Uni.lu Logo" className="unilu-logo" />
+          <div className="header-title">
+            Uni.lu Assistant
+          </div>
         </div>
         <div className="status-badge">
           <div className="status-dot"></div>
@@ -89,17 +88,17 @@ function App() {
         {messages.map((msg, idx) => (
           <div key={idx} className={`message ${msg.role}`}>
             {msg.role === 'assistant' ? (
-              <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }} />
+              <ReactMarkdown>{msg.content}</ReactMarkdown>
             ) : (
-                msg.content
+              msg.content
             )}
           </div>
         ))}
         {isLoading && (
           <div className="message assistant" style={{ opacity: 0.7 }}>
-            <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <span className="status-dot" style={{ background: 'var(--accent-purple)' }}></span>
-                Thinking...
+            <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
+              Thinking...
             </span>
           </div>
         )}
@@ -107,10 +106,10 @@ function App() {
       </div>
 
       <form className="input-area" onSubmit={handleSubmit}>
-        <input 
-          type="text" 
-          className="input-field" 
-          placeholder="Ask about schedule, food, sports, routing..." 
+        <input
+          type="text"
+          className="input-field"
+          placeholder="Ask about schedule, campus navigation, University news..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
