@@ -30,8 +30,8 @@ llm = ChatOllama(model="gemma4:e4b", temperature=0)
 tools = [
     get_user_schedule,
     get_canteen_menu,
-    # get_available_activities,
-    # book_resource,
+    get_available_activities,
+    book_resource,
     get_upcoming_events,
     get_event_details,
     # get_mental_health_specialists,
@@ -56,10 +56,11 @@ async def chat_endpoint(req: ChatRequest):
         "You are an AI assistant for university students at uni.lu. "
         "You help students with schedules, answering questions about university life, accommodation, "
         "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
-        "finding events, finding mental health consultants, and building transit routes via Mobiliteit API. "
+        "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
         "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
         "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
         "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
+        "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
         "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
         f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
     )))
