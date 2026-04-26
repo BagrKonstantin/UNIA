@@ -107,7 +107,7 @@ def extract_weekly_menu(html):
 
 
 
-def get_today_menu():
+def get_today_menu(today):
     weekly_menu = extract_weekly_menu(request_weekly_menu())
     # today = datetime.today().strftime('%d.%m')
     today = "24.04"
@@ -121,7 +121,7 @@ def get_today_menu():
 @tool
 def get_canteen_menu(location: str = "belval", date: str = datetime.today().strftime('%d.%m')) -> str:
     """
-    Get the menu for a campus canteen (e.g. food in 'Belval', 'Kirchberg', 'Limpertsberg') for a specific date.
+    Get the menu for a campus canteen (e.g. food in 'Belval', 'Kirchberg', 'Limpertsberg') for a specific date in '%d.%m' format.
     Returns the list of available meals.
     "1": "Céréales contenant du gluten (Blé, Seigle, Orge, Avoine, Épeautre, Kamut)",
     "2": "Crustacés",
@@ -144,7 +144,7 @@ def get_canteen_menu(location: str = "belval", date: str = datetime.today().strf
     """
     # Mocked data from Restopolis for the hackathon
     if 'belval' in location.lower():
-        return str(get_today_menu())
+        return str(get_today_menu(date))
     raise ValueError(f"Invalid location: {location}")
     return (
         f"Menu at Restopolis {location} on {date}:\n"
