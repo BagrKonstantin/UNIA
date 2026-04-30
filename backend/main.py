@@ -40,40 +40,39 @@ tools = [
 
 llm_with_tools = llm.bind_tools(tools)
 
+# In-memory storage for conversations
+conversations: dict[str, list] = {}
+
 class ChatRequest(BaseModel):
-    messages: list
+    session_id: str
+    message: str
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
-    lc_messages = []
+    session_id = req.session_id
     
-    now = datetime.now()
-    current_date = now.strftime("%Y-%m-%d")
-    current_day = now.strftime("%A")
-    
-    # Persona definition
-    lc_messages.append(SystemMessage(content=(
-        "You are an AI assistant for university students at uni.lu. "
-        "You help students with schedules, answering questions about university life, accommodation, "
-        "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
-        "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
-        "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
-        "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
-        "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
-        "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
-        "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
-        f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
-    )))
-    
-    for m in req.messages:
-        role = m.get("role")
-        content = m.get("content", "")
-        if role == "user":
-            lc_messages.append(HumanMessage(content=content))
-        elif role == "assistant":
-            lc_messages.append(AIMessage(content=content))
-        elif role == "tool":
-            lc_messages.append(ToolMessage(content=content, tool_call_id=m.get("id", "")))
+    if session_id not in conversations:
+        now = datetime.now()
+        current_date = now.strftime("%Y-%m-%d")
+        current_day = now.strftime("%A")
+        
+        system_msg = SystemMessage(content=(
+            "You are an AI assistant for university students at uni.lu. "
+            "You help students with schedules, answering questions about university life, accommodation, "
+            "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
+            "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
+            "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
+            "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
+            "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
+            "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
+            "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
+            f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
+        ))
+        conversations[session_id] = [system_msg]
+        
+    lc_messages = conversations[session_id]
+    lc_messages.append(HumanMessage(content=req.message))
+
 
     # Agent Loop
     response = await llm_with_tools.ainvoke(lc_messages)
@@ -107,6 +106,8 @@ async def chat_endpoint(req: ChatRequest):
 
         # Invoke LLM again with the tool outputs
         response = await llm_with_tools.ainvoke(lc_messages)
+
+    lc_messages.append(response)
 
     return {
         "role": "assistant",

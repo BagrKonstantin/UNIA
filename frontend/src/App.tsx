@@ -16,6 +16,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
   ]);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -43,7 +44,8 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.filter(m => m.role === 'user' || m.role === 'assistant')
+          session_id: sessionId,
+          message: input
         })
       });
 
