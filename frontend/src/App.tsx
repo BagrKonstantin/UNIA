@@ -51,16 +51,49 @@ function App() {
 
       if (!response.ok) throw new Error("Network response was not ok");
 
-      const data = await response.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
 
-      if (data.tool_results && data.tool_results.length > 0) {
-        setMessages(prev => [
-          ...prev,
-          ...data.tool_results.map((t: any) => ({ role: 'tool' as const, content: `[Executed Tool] ${t.content}` })),
-          { role: 'assistant', content: data.content || "Done! Is there anything else you need?" }
-        ]);
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+      let buffer = "";
+      while (reader) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        
+        let i;
+        while ((i = buffer.indexOf('\n\n')) !== -1) {
+          const eventString = buffer.slice(0, i);
+          buffer = buffer.slice(i + 2);
+          
+          if (eventString.startsWith('data: ')) {
+            try {
+              const dataStr = eventString.slice(6).trim();
+              if (!dataStr) continue;
+              const data = JSON.parse(dataStr);
+              if (data.content) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  newMsgs[newMsgs.length - 1] = { ...lastMsg, content: lastMsg.content + data.content };
+                  return newMsgs;
+                });
+              } else if (data.tool_call) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs.pop(); 
+                  newMsgs.push({ role: 'tool', content: `[Executing Tool] ${data.tool_call}` });
+                  newMsgs.push({ ...lastMsg!, content: "" }); 
+                  return newMsgs;
+                });
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE JSON", e, eventString);
+            }
+          }
+        }
       }
 
     } catch (error) {

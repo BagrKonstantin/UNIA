@@ -1,10 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_ollama import ChatOllama
 import uuid
+import json
 from datetime import datetime
 
 # Tool imports
@@ -63,6 +65,7 @@ async def chat_endpoint(req: ChatRequest):
             "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
             "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
             "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
+            "If the user asks about canteen, food you must use the get_canteen_menu tool. "
             "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
             "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
             "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
@@ -74,45 +77,61 @@ async def chat_endpoint(req: ChatRequest):
     lc_messages.append(HumanMessage(content=req.message))
 
 
-    # Agent Loop
-    response = await llm_with_tools.ainvoke(lc_messages)
-    print(response.content)
-
-    while response.tool_calls:
-        # --- PRINT CHAIN OF THOUGHT ---
-        # This captures the LLM's reasoning/decision to use tools
-        print(f"\n[AI Thought]: {response.content}")
-        for tc in response.tool_calls:
-            print(f"[Action]: Calling tool '{tc['name']}' with args: {tc['args']}")
-        # ------------------------------
-
-        lc_messages.append(response)
-        for tc in response.tool_calls:
-            tool_name = tc["name"]
-            tool_args = tc["args"]
-            tool_id = tc["id"]
-
-            tool_mapping = {t.name: t for t in tools}
-            if tool_name in tool_mapping:
-                try:
-                    result = tool_mapping[tool_name].invoke(tool_args)
-                    # Print the result from the "real world"
-                    print(f"[Observation]: {result}")
-                    lc_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id))
-                except Exception as e:
-                    lc_messages.append(ToolMessage(content=f"Error executing {tool_name}: {e}", tool_call_id=tool_id))
+    async def event_stream():
+        nonlocal lc_messages
+        
+        while True:
+            chunks = []
+            is_tool_call = False
+            
+            async for chunk in llm_with_tools.astream(lc_messages):
+                chunks.append(chunk)
+                if chunk.tool_call_chunks:
+                    is_tool_call = True
+                
+                if not is_tool_call and chunk.content:
+                    yield f"data: {json.dumps({'content': chunk.content})}\n\n"
+                    
+            if not chunks:
+                break
+                
+            # Combine chunks into a single AIMessage
+            final_message = chunks[0]
+            for c in chunks[1:]:
+                final_message += c
+                
+            if final_message.tool_calls:
+                lc_messages.append(final_message)
+                
+                # Notify frontend about tool execution
+                for tc in final_message.tool_calls:
+                    yield f"data: {json.dumps({'tool_call': tc['name']})}\n\n"
+                    print(f"\\n[AI Thought]: Calling tool '{tc['name']}' with args: {tc['args']}")
+                    
+                for tc in final_message.tool_calls:
+                    tool_name = tc["name"]
+                    tool_args = tc["args"]
+                    tool_id = tc["id"]
+        
+                    tool_mapping = {t.name: t for t in tools}
+                    if tool_name in tool_mapping:
+                        try:
+                            result = tool_mapping[tool_name].invoke(tool_args)
+                            print(f"[Observation]: {result}")
+                            lc_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id))
+                        except Exception as e:
+                            lc_messages.append(ToolMessage(content=f"Error executing {tool_name}: {e}", tool_call_id=tool_id))
+                    else:
+                        lc_messages.append(ToolMessage(content=f"Tool {tool_name} not found.", tool_call_id=tool_id))
+                        
+                # Loop continues to invoke LLM with tool outputs
+                continue
             else:
-                lc_messages.append(ToolMessage(content=f"Tool {tool_name} not found.", tool_call_id=tool_id))
+                # No tool calls, conversation turn is done
+                lc_messages.append(final_message)
+                break
 
-        # Invoke LLM again with the tool outputs
-        response = await llm_with_tools.ainvoke(lc_messages)
-
-    lc_messages.append(response)
-
-    return {
-        "role": "assistant",
-        "content": response.content
-    }
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 if __name__ == "__main__":
