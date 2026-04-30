@@ -18,8 +18,13 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
   ]);
-  const [sessionId] = useState(() => crypto.randomUUID());
-  const [input, setInput] = useState("");
+  const [sessionId] = useState(() => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    // Fallback for insecure local network connections
+    return 'local-' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+  });  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +47,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch("http://192.168.178.79:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
