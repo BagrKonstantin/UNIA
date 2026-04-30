@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Tool imports
 from tools.schedule import get_user_schedule
-from tools.restopolis import get_canteen_menu
+from tools.restopolis import get_canteen_menu, get_information_about_canteens
 from tools.affluences import get_available_activities, book_resource
 from tools.events import get_upcoming_events, get_event_details
 from tools.health import get_mental_health_specialists
@@ -32,6 +32,7 @@ llm = ChatOllama(model="gemma4:e4b", temperature=0)
 tools = [
     get_user_schedule,
     get_canteen_menu,
+    get_information_about_canteens,
     get_available_activities,
     book_resource,
     get_upcoming_events,
@@ -107,6 +108,7 @@ async def chat_endpoint(req: ChatRequest):
                 # Notify frontend about tool execution
                 tool_descriptions = {
                     "get_canteen_menu": "Looking up the menu",
+                    "get_information_about_canteens": "Checking canteen schedule",
                     "get_upcoming_events": "Searching for events",
                     "get_event_details": "Getting event details",
                     "get_available_activities": "Searching for activities",

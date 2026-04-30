@@ -30,6 +30,26 @@ def get_today_menu(campus, date):
     menu = json_data[campus.lower()][date]
     return menu
 
+@tool
+def get_information_about_canteens():
+    """
+    Get information about the canteens opening hours and when they serve meals
+    """
+    return """Belval campus
+Food House: 7.30 – 15.00, meals 11.30 – 14.00
+Food Café: 7.00 – 16.00, meals: 11.30 – 14.00
+Food Zone: 7.30 – 15.00, meals: 11.30 – 14.00
+Food Lab: 7.30 – 15.30, meals: 11.30 – 14.00
+Food Hub: 11.30 – 14.00
+Food Lounge: 7.00 – 14.30
+
+Kirchberg campus
+Restaurant Altius: 7.00 – 15.30, meals: 11.30 – 14.00
+Brasserie John’s: 7.00 – 15.30, meals: 11.30 – 14.00
+
+Limpertsberg campus
+Um Weier: 7.30 – 15.00, meals: 11.30 – 14.00"""
+
 
 @tool
 def get_canteen_menu(location: str = "Belval", date: str = datetime.today().strftime("%Y-%m-%d")) -> str:
