@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles } from 'lucide-react';
+import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -10,6 +10,8 @@ type Message = {
   content: string;
   id?: string;
   name?: string;
+  tools?: string[];
+  isStreaming?: boolean;
 };
 
 function App() {
@@ -54,7 +56,7 @@ function App() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
       
-      setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "", tools: [], isStreaming: true }]);
 
       let buffer = "";
       while (reader) {
@@ -83,9 +85,9 @@ function App() {
               } else if (data.tool_call) {
                 setMessages(prev => {
                   const newMsgs = [...prev];
-                  const lastMsg = newMsgs.pop(); 
-                  newMsgs.push({ role: 'tool', content: `[Executing Tool] ${data.tool_call}` });
-                  newMsgs.push({ ...lastMsg!, content: "" }); 
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  const tools = lastMsg.tools || [];
+                  newMsgs[newMsgs.length - 1] = { ...lastMsg, tools: [...tools, data.tool_call] };
                   return newMsgs;
                 });
               }
@@ -95,6 +97,15 @@ function App() {
           }
         }
       }
+
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        const lastMsg = newMsgs[newMsgs.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant') {
+          newMsgs[newMsgs.length - 1] = { ...lastMsg, isStreaming: false };
+        }
+        return newMsgs;
+      });
 
     } catch (error) {
       console.error(error);
@@ -123,20 +134,28 @@ function App() {
         {messages.map((msg, idx) => (
           <div key={idx} className={`message ${msg.role}`}>
             {msg.role === 'assistant' ? (
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <div className="assistant-message-content">
+                {msg.content ? (
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                ) : (
+                  msg.tools && msg.tools.length > 0 ? (
+                    <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
+                      <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
+                      Using tool {msg.tools[msg.tools.length - 1]}...
+                    </span>
+                  ) : msg.isStreaming ? (
+                    <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
+                      <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
+                      Thinking...
+                    </span>
+                  ) : null
+                )}
+              </div>
             ) : (
               msg.content
             )}
           </div>
         ))}
-        {isLoading && (
-          <div className="message assistant" style={{ opacity: 0.7 }}>
-            <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
-              Thinking...
-            </span>
-          </div>
-        )}
         <div ref={endOfMessagesRef} />
       </div>
 
