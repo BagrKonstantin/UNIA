@@ -32,7 +32,7 @@ def request_sport_activities(data):
 
 def get_available_events_with_times(html):
     """
-    Extracts events marked as 'available' along with their specific start times.
+    Extracts events marked as 'available' along with their specific start times and duration.
     """
     soup = BeautifulSoup(html, 'html.parser')
     available_events = []
@@ -66,6 +66,7 @@ def get_available_events_with_times(html):
                             available_events.append({
                                 'resource_id': obj.get('resource_id'),
                                 'name': obj.get('resource_name'),
+                                'duration': obj.get('granularity'),  # Added duration (in minutes)
                                 'times': start_times
                             })
 
