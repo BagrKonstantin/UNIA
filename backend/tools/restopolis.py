@@ -32,7 +32,7 @@ def get_today_menu(campus, date):
 
 
 @tool
-def get_canteen_menu(location: str = "belval", date: str = datetime.today().strftime("%Y-%m-%d")) -> str:
+def get_canteen_menu(location: str = "Belval", date: str = datetime.today().strftime("%Y-%m-%d")) -> str:
     """
     Get the menu for a campus canteen (e.g. food in 'Belval', 'Kirchberg', 'Limpertsberg') for a specific date in 'YYYY-MM-DD' format.
     If date is not specified, get the menu for today's date.

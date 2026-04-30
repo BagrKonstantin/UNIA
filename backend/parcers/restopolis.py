@@ -58,7 +58,7 @@ def extract_weekly_menu(html):
                 # Store as a dictionary to include both name and allergens
                 items.append({
                     "name": product_name,
-                    "allergens": allergens
+                    "allergens": [allergen for allergen in allergens.split(', ')]
                 })
 
         # Append the last course found
@@ -71,7 +71,7 @@ def extract_weekly_menu(html):
 
 # Configuration of all campuses and their restaurants
 CAMPUS_CONFIG = {
-    "Belval": {
+    "belval": {
         "Food House": {"res": "147", "ser": "53"},
         "Food Cafe": {"res": "148", "ser": "154"},
         "Food Lab Restaurant": {"res": "150", "ser": "156"},
@@ -80,11 +80,11 @@ CAMPUS_CONFIG = {
         "Food Lounge Cafeteria": {"res": "1363", "ser": "2411"},
         "Food Zone": {"res": "149", "ser": "155"},
     },
-    "Kirchberg": {
+    "kirchberg": {
         "Restaurant Altius": {"res": "164", "ser": "1183"},
         "Brasserie John’s": {"res": "160", "ser": "178"},
     },
-    "Limpertsberg": {
+    "limpertsberg": {
         "Um Weier Restaurant": {"res": "6", "ser": "59"},
     }
 }
