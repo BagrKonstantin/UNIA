@@ -1,8 +1,8 @@
 import requests
 from langchain_core.tools import tool
-import re
-import json
-from bs4 import BeautifulSoup
+
+from backend.parcers.affluences import request_sport_activities, get_available_events_with_times
+
 
 @tool
 def get_available_activities(date) -> str:
@@ -13,102 +13,19 @@ def get_available_activities(date) -> str:
     return get_available_events_with_times(request_sport_activities(date))
 
 @tool
-def book_resource(resource_id: str) -> str:
+def book_resource(resource_id: str, date: str, start_time: str, end_time: str) -> str:
     """
-    Books a sport, fitness activities with only resource_id that consists of 5 digits.
+    Books a sport, fitness activities with resource_id, date in 'YYYY-MM-DD' format and start and end time in 'HH:MM' format.
     Always confirm with the user after successful booking.
     USER HAVE TO CONFIRM RESERVATION VIA EMAIL OR AFFLUENCE APP
     """
-    response = register(resource_id)
+    response = register(resource_id, date, start_time, end_time)
     return response
 
 
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Connection": "keep-alive",
-}
-def request_sport_activities(data):
-    try:
-        url = f"https://affluences.com/en/sites/universite-du-luxembourg-1/student-services/reservation?type=3018&date={data}"
 
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200:
-            with open("sport.html", "w", encoding="utf-8") as file:
-                file.write(response.text)
-            return response.text
-        else:
-            print(f"Error: {response.status_code}")
-            print(response.text)
-
-    except Exception as e:
-        print(f"Error saving file: {e}")
-
-
-
-
-def get_available_events_with_times(html):
-    """
-    Extracts events marked as 'available' along with their specific start times.
-    """
-    soup = BeautifulSoup(html, 'html.parser')
-    available_events = []
-
-    scripts = soup.find_all('script')
-
-    for script in scripts:
-        if not script.string or '"resource_id"' not in script.string:
-            continue
-
-        try:
-            # Extract the JSON block
-            match = re.search(r'(\{.*\})', script.string, re.DOTALL)
-            if not match:
-                continue
-
-            data = json.loads(match.group(1))
-
-            def find_available_resources(obj):
-                if isinstance(obj, dict):
-                    # Check if this is a resource with availability
-                    if 'resource_id' in obj and obj.get('slots_state') == 'available':
-                        # Extract the list of available start times
-                        start_times = []
-                        if 'hours' in obj and isinstance(obj['hours'], list):
-                            for slot in obj['hours']:
-                                if slot.get('state') == 'available':
-                                    start_times.append(slot.get('hour'))
-
-                        if start_times:
-                            available_events.append({
-                                'resource_id': obj.get('resource_id'),
-                                'name': obj.get('resource_name'),
-                                'times': start_times
-                            })
-
-                    # Search deeper in the dictionary
-                    for value in obj.values():
-                        find_available_resources(value)
-                elif isinstance(obj, list):
-                    for item in obj:
-                        find_available_resources(item)
-
-            find_available_resources(data)
-        except (json.JSONDecodeError, Exception):
-            continue
-
-    # De-duplicate results by ID
-    unique_events = {}
-    for e in available_events:
-        unique_events[e['resource_id']] = e
-
-    return list(unique_events.values())
-
-
-def register(resource_id):
+def register(resource_id, date, start_time, end_time):
     # Define the endpoint
     url = f"https://reservation.affluences.com/api/reserve/{resource_id}"
 
@@ -134,9 +51,9 @@ def register(resource_id):
     payload = {
         "auth_type": None,
         "email": "konstantin.bagrianskii.001@student.uni.lu",
-        "date": "2026-04-27",
-        "start_time": "18:30",
-        "end_time": "20:30",
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
         "note": None,
         "user_firstname": "Konstantin",
         "user_lastname": "Bagrianskii",
