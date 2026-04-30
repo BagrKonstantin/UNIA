@@ -52,6 +52,7 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
     session_id = req.session_id
+    print(session_id)
     
     if session_id not in conversations:
         now = datetime.now()
@@ -104,8 +105,19 @@ async def chat_endpoint(req: ChatRequest):
                 lc_messages.append(final_message)
                 
                 # Notify frontend about tool execution
+                tool_descriptions = {
+                    "get_canteen_menu": "Looking up the menu",
+                    "get_upcoming_events": "Searching for events",
+                    "get_event_details": "Getting event details",
+                    "get_available_activities": "Searching for activities",
+                    "book_resource": "Booking spot",
+                    "get_user_schedule": "Getting your schedule",
+                    "get_mental_health_specialists": "Finding health specialists",
+                    "get_transit_route": "Finding transit routes"
+                }
                 for tc in final_message.tool_calls:
-                    yield f"data: {json.dumps({'tool_call': tc['name']})}\n\n"
+                    desc = tool_descriptions.get(tc['name'], f"Using tool {tc['name']}")
+                    yield f"data: {json.dumps({'tool_call': desc})}\n\n"
                     print(f"\\n[AI Thought]: Calling tool '{tc['name']}' with args: {tc['args']}")
                     
                 for tc in final_message.tool_calls:

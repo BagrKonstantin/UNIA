@@ -141,7 +141,7 @@ function App() {
                   msg.tools && msg.tools.length > 0 ? (
                     <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
                       <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
-                      Using tool {msg.tools[msg.tools.length - 1]}...
+                      {msg.tools[msg.tools.length - 1]}...
                     </span>
                   ) : msg.isStreaming ? (
                     <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
