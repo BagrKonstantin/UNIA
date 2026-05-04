@@ -16,6 +16,7 @@ from tools.affluences import get_available_activities, book_resource
 from tools.events import get_upcoming_events, get_event_details
 from tools.health import get_mental_health_specialists
 from tools.mobility import get_transit_route
+from tools.web_search import search_unilu, deep_search_unilu
 
 app = FastAPI(title="Uni.lu Hackathon Assistant")
 
@@ -37,6 +38,8 @@ tools = [
     book_resource,
     get_upcoming_events,
     get_event_details,
+    search_unilu,
+    deep_search_unilu,
     # get_mental_health_specialists,
     # get_transit_route,
 ]
@@ -71,6 +74,8 @@ async def chat_endpoint(req: ChatRequest):
             "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
             "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
             "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
+            "If the user asks a general question about the university or wants to find specific information not covered by other tools, use the search_unilu tool. "
+            "If the user asks about application deadlines, deep procedural details or specific requirements, use the deep_search_unilu tool to extract precise answers from website pages."
             f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
         ))
         conversations[session_id] = [system_msg]
@@ -114,6 +119,8 @@ async def chat_endpoint(req: ChatRequest):
                     "get_available_activities": "Searching for activities",
                     "book_resource": "Booking spot",
                     "get_user_schedule": "Getting your schedule",
+                    "search_unilu": "Searching uni.lu website",
+                    "deep_search_unilu": "Deeply scanning uni.lu for specific details",
                     "get_mental_health_specialists": "Finding health specialists",
                     "get_transit_route": "Finding transit routes"
                 }
