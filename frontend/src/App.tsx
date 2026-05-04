@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles } from 'lucide-react';
+import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -10,12 +10,15 @@ type Message = {
   content: string;
   id?: string;
   name?: string;
+  tools?: string[];
+  isStreaming?: boolean;
 };
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
   ]);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -43,23 +46,66 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.filter(m => m.role === 'user' || m.role === 'assistant')
+          session_id: sessionId,
+          message: input
         })
       });
 
       if (!response.ok) throw new Error("Network response was not ok");
 
-      const data = await response.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: "", tools: [], isStreaming: true }]);
 
-      if (data.tool_results && data.tool_results.length > 0) {
-        setMessages(prev => [
-          ...prev,
-          ...data.tool_results.map((t: any) => ({ role: 'tool' as const, content: `[Executed Tool] ${t.content}` })),
-          { role: 'assistant', content: data.content || "Done! Is there anything else you need?" }
-        ]);
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+      let buffer = "";
+      while (reader) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        
+        let i;
+        while ((i = buffer.indexOf('\n\n')) !== -1) {
+          const eventString = buffer.slice(0, i);
+          buffer = buffer.slice(i + 2);
+          
+          if (eventString.startsWith('data: ')) {
+            try {
+              const dataStr = eventString.slice(6).trim();
+              if (!dataStr) continue;
+              const data = JSON.parse(dataStr);
+              if (data.content) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  newMsgs[newMsgs.length - 1] = { ...lastMsg, content: lastMsg.content + data.content };
+                  return newMsgs;
+                });
+              } else if (data.tool_call) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  const tools = lastMsg.tools || [];
+                  newMsgs[newMsgs.length - 1] = { ...lastMsg, tools: [...tools, data.tool_call] };
+                  return newMsgs;
+                });
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE JSON", e, eventString);
+            }
+          }
+        }
       }
+
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        const lastMsg = newMsgs[newMsgs.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant') {
+          newMsgs[newMsgs.length - 1] = { ...lastMsg, isStreaming: false };
+        }
+        return newMsgs;
+      });
 
     } catch (error) {
       console.error(error);
@@ -88,20 +134,28 @@ function App() {
         {messages.map((msg, idx) => (
           <div key={idx} className={`message ${msg.role}`}>
             {msg.role === 'assistant' ? (
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <div className="assistant-message-content">
+                {msg.content ? (
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                ) : (
+                  msg.tools && msg.tools.length > 0 ? (
+                    <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
+                      <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
+                      {msg.tools[msg.tools.length - 1]}...
+                    </span>
+                  ) : msg.isStreaming ? (
+                    <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
+                      <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
+                      Thinking...
+                    </span>
+                  ) : null
+                )}
+              </div>
             ) : (
               msg.content
             )}
           </div>
         ))}
-        {isLoading && (
-          <div className="message assistant" style={{ opacity: 0.7 }}>
-            <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span className="status-dot" style={{ background: 'var(--accent-unilu-red)' }}></span>
-              Thinking...
-            </span>
-          </div>
-        )}
         <div ref={endOfMessagesRef} />
       </div>
 
