@@ -108,6 +108,7 @@ def get_available_events_with_times(html):
     return list(unique_events.values())
 
 
+# TODO add start time + duration
 def register(resource_id):
     # Define the endpoint
     url = f"https://reservation.affluences.com/api/reserve/{resource_id}"
@@ -169,7 +170,3 @@ def register(resource_id):
             print("Server Error Message:", response.text)
 
         return response.text
-
-# a = get_available_events_with_times(request_sport_activities("2026-04-27"))
-# print(a)
-# register(88004)

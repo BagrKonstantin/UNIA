@@ -148,9 +148,3 @@ def get_canteen_menu(location: str = "belval", date: str = datetime.today().strf
     if 'belval' in location.lower():
         return str(get_today_menu(date))
     raise ValueError(f"Invalid location: {location}")
-    return (
-        f"Menu at Restopolis {location} on {date}:\n"
-        "- Standard Student Meal: Chicken Breast with Rice\n"
-        "- Vegetarian Option: Tofu Curry\n"
-        "- Dessert: Apple Tart"
-    )

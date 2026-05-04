@@ -43,6 +43,8 @@ llm_with_tools = llm.bind_tools(tools)
 class ChatRequest(BaseModel):
     messages: list
 
+
+# TODO rewrite messaging from scratch
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
     lc_messages = []
@@ -105,7 +107,6 @@ async def chat_endpoint(req: ChatRequest):
             else:
                 lc_messages.append(ToolMessage(content=f"Tool {tool_name} not found.", tool_call_id=tool_id))
 
-        # Invoke LLM again with the tool outputs
         response = await llm_with_tools.ainvoke(lc_messages)
 
     return {
@@ -115,5 +116,4 @@ async def chat_endpoint(req: ChatRequest):
 
 
 if __name__ == "__main__":
-    # Use the string "main:app" for reload to work correctly
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
