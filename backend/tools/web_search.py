@@ -13,8 +13,7 @@ def fetch_page_content(url: str) -> str:
                 script.extract()
             # Extract text and remove excessive whitespace
             text = soup.get_text(separator=' ', strip=True)
-            # Return first 4000 characters to prevent overflow
-            return text[:4000]
+            return text
     except Exception as e:
         return f"Could not fetch content from {url}: {e}"
     return ""
@@ -39,7 +38,7 @@ def search_unilu(query: str) -> str:
             title = res.get('title')
             snippet = res.get('body')
             
-            content = fetch_page_content(link)
+            content = fetch_page_content(link)[:4000]
             
             entry = f"Title: {title}\nURL: {link}\nSnippet: {snippet}\nContent: {content}..."
             full_content.append(entry)
@@ -78,12 +77,31 @@ def deep_search_unilu(query: str) -> str:
         if not results:
             return "No results found on uni.lu for your query."
 
+        import re
         full_content = []
+        visited_links = set()
+        
         for res in results:
             link = res.get('href')
+            if link in visited_links:
+                continue
+            visited_links.add(link)
+            print(f"Deep scraping: {link}")
             title = res.get('title')
             
-            content_raw = fetch_page_content(link)
+            content_raw = fetch_page_content(link)[:4000]
+            
+            # # Sub-page heuristic: If it's a study program, also fetch the admissions page just in case
+            # match = re.search(r"(https?://(?:www\.)?uni\.lu/[^/]+/study-programs/[^/]+)", link)
+            # if match:
+            #     admission_link = match.group(1) + "/admissions/"
+            #     if admission_link not in visited_links and admission_link != link:
+            #         visited_links.add(admission_link)
+            #         print(f"Also scraping admissions page: {admission_link}")
+            #         adm_content = fetch_page_content(admission_link)
+            #         if adm_content:
+            #             content_raw += f"\n\n--- ADMISSIONS PAGE ({admission_link}) ---\n\n" + adm_content
+
             if not content_raw:
                 continue
                 
