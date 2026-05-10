@@ -17,6 +17,7 @@ from tools.events import get_upcoming_events, get_event_details
 from tools.health import get_mental_health_specialists
 from tools.mobility import get_transit_route
 from tools.web_search import search_unilu, deep_search_unilu
+from tools.library import get_available_slots, book_slot
 
 app = FastAPI(title="Uni.lu Hackathon Assistant")
 
@@ -40,6 +41,8 @@ tools = [
     get_event_details,
     search_unilu,
     deep_search_unilu,
+    get_available_slots,
+    book_slot,
     # get_mental_health_specialists,
     # get_transit_route,
 ]
@@ -70,12 +73,14 @@ async def chat_endpoint(req: ChatRequest):
             "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
             "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
             "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
+            
             "If the user asks about canteen, food you must use the get_canteen_menu tool. "
             "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
             "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
             "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
             "If the user asks a general question about the university or wants to find specific information not covered by other tools, use the search_unilu tool. "
             "If the user asks about application deadlines, deep procedural details or specific requirements, use the deep_search_unilu tool to extract precise answers from website pages."
+            
             f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
         ))
         conversations[session_id] = [system_msg]
@@ -122,7 +127,9 @@ async def chat_endpoint(req: ChatRequest):
                     "search_unilu": "Searching uni.lu website",
                     "deep_search_unilu": "Deeply scanning uni.lu for specific details",
                     "get_mental_health_specialists": "Finding health specialists",
-                    "get_transit_route": "Finding transit routes"
+                    "get_transit_route": "Finding transit routes",
+                    "get_available_slots": "Finding available slots",
+                    "book_slot": "Booking slot",
                 }
                 for tc in final_message.tool_calls:
                     desc = tool_descriptions.get(tc['name'], f"Using tool {tc['name']}")
