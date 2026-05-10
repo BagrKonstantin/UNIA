@@ -16,8 +16,7 @@ def get_available_activities(date) -> str:
 def book_resource(resource_id: str, date: str, start_time: str, end_time: str) -> str:
     """
     Books a sport, fitness activities with resource_id, date in 'YYYY-MM-DD' format and start and end time in 'HH:MM' format.
-    Always confirm with the user after successful booking.
-    USER HAVE TO CONFIRM RESERVATION VIA EMAIL OR AFFLUENCE APP
+    USER HAVE TO CONFIRM RESERVATION VIA EMAIL.
     """
     response = register(resource_id, date, start_time, end_time)
     return response
