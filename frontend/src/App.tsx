@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Mic, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -14,6 +14,55 @@ type Message = {
   isStreaming?: boolean;
 };
 
+async function convertBlobToWav(blob: Blob): Promise<Blob> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  
+  const numOfChan = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length * numOfChan * 2;
+  const buffer = new ArrayBuffer(44 + length);
+  const view = new DataView(buffer);
+  
+  const writeString = (view: DataView, offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + length, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numOfChan, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numOfChan * 2, true);
+  view.setUint16(32, numOfChan * 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, length, true);
+  
+  const channelData = [];
+  for (let i = 0; i < numOfChan; i++) {
+    channelData.push(audioBuffer.getChannelData(i));
+  }
+  
+  let offset = 44;
+  for (let i = 0; i < audioBuffer.length; i++) {
+    for (let channel = 0; channel < numOfChan; channel++) {
+      let sample = Math.max(-1, Math.min(1, channelData[channel][i]));
+      sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, sample, true);
+      offset += 2;
+    }
+  }
+  
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
@@ -26,7 +75,10 @@ function App() {
     return 'local-' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
   });  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
 
   const scrollToBottom = () => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,20 +91,22 @@ function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    await submitText(input);
+  };
 
-    const userMessage: Message = { role: 'user', content: input };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+  const submitText = async (textToSubmit: string) => {
+    const userMessage: Message = { role: 'user', content: textToSubmit };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/chat", {
+      const response = await fetch("http://192.168.178.79:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          message: input
+          message: textToSubmit
         })
       });
 
@@ -120,6 +174,85 @@ function App() {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4') 
+          ? 'audio/mp4' 
+          : '';
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        try {
+          const wavBlob = await convertBlobToWav(audioBlob);
+          await handleAudioSubmit(wavBlob);
+        } catch (e) {
+          console.error("WAV conversion error:", e);
+          await handleAudioSubmit(audioBlob);
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const handleAudioSubmit = async (audioBlob: Blob) => {
+    setIsLoading(true);
+    setInput("🎙️ Transcribing...");
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.wav');
+      
+      const response = await fetch("http://192.168.178.79:8000/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) throw new Error("Transcription failed");
+      const data = await response.json();
+      
+      // Submit the text
+      await submitText(data.text);
+    } catch (e) {
+      console.error("Audio processing error:", e);
+      setInput("");
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="app-wrapper">
       <header className="header">
@@ -174,7 +307,16 @@ function App() {
           disabled={isLoading}
           autoFocus
         />
-        <button type="submit" className="send-btn" disabled={isLoading || !input.trim()}>
+        <button 
+          type="button" 
+          className={`mic-btn ${isRecording ? 'recording' : ''}`} 
+          onClick={toggleRecording}
+          disabled={isLoading && !isRecording}
+          title={isRecording ? "Stop recording output" : "Start recording"}
+        >
+          {isRecording ? <Square size={22} fill="currentColor" stroke="none" /> : <Mic size={22} fill="currentColor" stroke="none" />}
+        </button>
+        <button type="submit" className="send-btn" disabled={isLoading || !input.trim() || isRecording}>
           <Send size={22} fill="currentColor" stroke="none" />
         </button>
       </form>

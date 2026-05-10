@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     host: true, // or '0.0.0.0'
     hmr: {
-      host: '127.0.0.1', // Put your computer's IP address here
+      host: '192.168.178.79', // Put your computer's IP address here
     },
   },
 })

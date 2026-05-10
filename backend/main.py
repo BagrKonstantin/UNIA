@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -7,6 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Tool
 from langchain_ollama import ChatOllama
 import uuid
 import json
+import base64
 from datetime import datetime
 
 # Tool imports
@@ -161,6 +162,36 @@ async def chat_endpoint(req: ChatRequest):
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+@app.post("/api/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    audio_bytes = await file.read()
+    audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+    mime_type = "audio/wav"
+
+    system_msg = SystemMessage(content=(
+        "You are an AI assistant for university students at uni.lu. "
+        "You help students with schedules, answering questions about university life, accommodation, "
+        "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
+        "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
+        "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
+        "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
+        
+        "YOUR TASK NOW OS TO TRANSCRIBE THE USER'S AUDIO MESSAGE"
+    ))
+    
+    message = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{audio_b64}"
+                }
+            }
+        ]
+    )
+    
+    response = llm.invoke([system_msg, message])
+    return {"text": response.content}
 
 if __name__ == "__main__":
     # Use the string "main:app" for reload to work correctly
