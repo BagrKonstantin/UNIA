@@ -129,10 +129,10 @@ function App() {
             Luni.U
           </div>
         </div>
-        <div className="status-badge">
-          <div className="status-dot"></div>
-          Gemma 4 (Local)
-        </div>
+        {/*<div className="status-badge">*/}
+        {/*  <div className="status-dot"></div>*/}
+        {/*  Gemma 4 (Local)*/}
+        {/*</div>*/}
       </header>
 
       <div className="chat-container">
