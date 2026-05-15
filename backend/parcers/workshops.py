@@ -16,8 +16,6 @@ def request_workshops():
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            # with open("arts.html", "w", encoding="utf-8") as file:
-            #     file.write(response.text)
             return response.text
         else:
             print(f"Error: {response.status_code}")
