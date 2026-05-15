@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Tool imports
 from tools.schedule import get_user_schedule
-from tools.restopolis import get_canteen_menu, get_information_about_canteens
+from tools.restopolis import get_canteen_menu, get_information_about_canteens, get_allergens
 from tools.affluences import get_available_activities, book_resource
 from tools.events import get_upcoming_events, get_event_details
 from tools.health import get_mental_health_specialists
@@ -36,6 +36,7 @@ tools = [
     get_user_schedule,
     get_canteen_menu,
     get_information_about_canteens,
+    get_allergens,
     get_available_activities,
     book_resource,
     get_upcoming_events,
@@ -123,6 +124,7 @@ Procedural Precision: For complex queries involving application deadlines, legal
                 tool_descriptions = {
                     "get_canteen_menu": "Looking up the menu",
                     "get_information_about_canteens": "Checking canteen schedule",
+                    "get_allergens": "Getting allergens",
                     "get_upcoming_events": "Searching for events",
                     "get_event_details": "Getting event details",
                     "get_available_activities": "Searching for activities",
