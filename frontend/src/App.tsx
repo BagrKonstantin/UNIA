@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square, Calendar, Utensils, Users, GraduationCap } from 'lucide-react';
+import { Send, Mic, Square, Calendar, Utensils, Users, GraduationCap, StopCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -89,6 +89,7 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = () => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,6 +116,23 @@ function App() {
     await submitText(query);
   };
 
+  const stopGenerating = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        const lastMsg = newMsgs[newMsgs.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isStreaming) {
+          newMsgs[newMsgs.length - 1] = { ...lastMsg, isStreaming: false, content: lastMsg.content + " [Generation stopped by user]" };
+        }
+        return newMsgs;
+      });
+    }
+  };
+
+
 
   const submitText = async (textToSubmit: string) => {
     const userMessage: Message = { role: 'user', content: textToSubmit };
@@ -122,15 +140,20 @@ function App() {
     setInput("");
     setIsLoading(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch("http://192.168.178.79:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           session_id: sessionId,
           message: textToSubmit
         })
       });
+
 
       if (!response.ok) throw new Error("Network response was not ok");
 
@@ -188,13 +211,19 @@ function App() {
         return newMsgs;
       });
 
-    } catch (error) {
-      console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, the backend seems unavailable. Make sure your Python server is running!" }]);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("Fetch aborted");
+      } else {
+        console.error(error);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, the backend seems unavailable. Make sure your Python server is running!" }]);
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
+
 
   const startRecording = async () => {
     try {
@@ -355,9 +384,15 @@ function App() {
         >
           {isRecording ? <Square size={22} fill="currentColor" stroke="none" /> : <Mic size={22} fill="currentColor" stroke="none" />}
         </button>
-        <button type="submit" className="send-btn" disabled={isLoading || !input.trim() || isRecording}>
-          <Send size={22} fill="currentColor" stroke="none" />
-        </button>
+        {isLoading ? (
+          <button type="button" className="stop-btn" onClick={stopGenerating} title="Stop generating">
+            <StopCircle size={22} fill="currentColor" stroke="none" />
+          </button>
+        ) : (
+          <button type="submit" className="send-btn" disabled={!input.trim() || isRecording}>
+            <Send size={22} fill="currentColor" stroke="none" />
+          </button>
+        )}
       </form>
     </div>
   );
