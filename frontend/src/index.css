@@ -345,3 +345,56 @@ body {
     flex-shrink: 0;
   }
 }
+
+/* Suggestion Buttons Styles */
+.suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.suggestion-btn {
+  background: #ffffff;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent-unilu-blue);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  text-align: left;
+  flex: 1 1 calc(50% - 12px);
+  min-width: 200px;
+}
+
+.suggestion-btn:hover {
+  background: #fdf2f1;
+  color: var(--accent-unilu-red);
+  border-color: var(--accent-unilu-red);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(225, 60, 46, 0.08);
+}
+
+.suggestion-btn:active {
+  transform: translateY(0);
+}
+
+.suggestion-icon {
+  color: var(--accent-unilu-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .suggestion-btn {
+    flex: 1 1 100%;
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square } from 'lucide-react';
+import { Send, Mic, Square, Calendar, Utensils, Users, GraduationCap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -67,6 +67,15 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Welcome! I'm your Uni.lu Assistant. I can help with information about the University of Luxembourg, campus services, scheduling, and more. How can I assist you today?" }
   ]);
+
+  const SUGGESTIONS = [
+    { label: "Check Schedule", query: "What workshops or classes are available today?", icon: <Calendar size={18} /> },
+    { label: "Campus Events", query: "Tell me about upcoming events at the university.", icon: <GraduationCap size={18} /> },
+    { label: "Restopolis Menu", query: "What's on the menu at Restopolis today?", icon: <Utensils size={18} /> },
+    { label: "Study Spaces", query: "How busy are the study areas right now?", icon: <Users size={18} /> },
+  ];
+
+
   const [sessionId] = useState(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
@@ -93,6 +102,12 @@ function App() {
     if (!input.trim() || isLoading) return;
     await submitText(input);
   };
+
+  const handleSuggestionClick = async (query: string) => {
+    if (isLoading) return;
+    await submitText(query);
+  };
+
 
   const submitText = async (textToSubmit: string) => {
     const userMessage: Message = { role: 'user', content: textToSubmit };
@@ -274,7 +289,23 @@ function App() {
             {msg.role === 'assistant' ? (
               <div className="assistant-message-content">
                 {msg.content ? (
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <>
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    {idx === 0 && messages.length === 1 && (
+                      <div className="suggestions-container">
+                        {SUGGESTIONS.map((suggestion, sIdx) => (
+                          <button
+                            key={sIdx}
+                            className="suggestion-btn"
+                            onClick={() => handleSuggestionClick(suggestion.query)}
+                          >
+                            <span className="suggestion-icon">{suggestion.icon}</span>
+                            {suggestion.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   msg.tools && msg.tools.length > 0 ? (
                     <span style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: 0.7 }}>
