@@ -45,8 +45,6 @@ tools = [
     get_available_slots,
     book_slot,
     get_workshops,
-    # get_mental_health_specialists,
-    # get_transit_route,
 ]
 
 llm_with_tools = llm.bind_tools(tools)
@@ -190,15 +188,16 @@ Convert raw, potentially noisy speech-to-text input into a clean, grammatically 
 - Campuses: Belval, Kirchberg, Limpertsberg.
 - Buildings: Maison du Savoir (MSA), Maison des Arts et des Étudiants (MAE), Maison du Nombre, Maison de l'Innovation, Weicker Building.
 - Facilities: LLC (Luxembourg Learning Centre), "cube" (study room), Restopolis (canteens), SEVE, Guichet Étudiant.
-- Apps/Tech: Affluences (booking), Moodle, ServiceNow.
+- Apps/Tech: Affluences (booking), Moodle.
 - Academic Units: FSTM, FDEF, FHSE, SnT, LCSB, C2DH.
+- User will probably ask about the menu, events, workshop, activities, schedule, library, etc.
 
 ## Strict Output Rules
 1. Output ONLY the corrected transcript.
 2. Do NOT include Markdown formatting (no bolding, no headers).
 3. Do NOT add conversational responses, acknowledgments, or "Here is the transcript."
 4. Ensure proper capitalization of all University entities.
-5. Maintain the original language of the speaker (English, French, or German) but standardize the technical Uni.lu terms.
+5. Maintain the original language of the speaker (English) but standardize the technical Uni.lu terms.
 6. If a term is ambiguous, choose the one that fits the University context (e.g., if you hear "bell val," output "Belval").
 """
     ))
