@@ -15,8 +15,6 @@ from tools.schedule import get_user_schedule
 from tools.restopolis import get_canteen_menu, get_information_about_canteens, get_allergens
 from tools.affluences import get_available_activities, book_resource
 from tools.events import get_upcoming_events, get_event_details
-from tools.health import get_mental_health_specialists
-from tools.mobility import get_transit_route
 from tools.web_search import search_unilu, deep_search_unilu
 from tools.library import get_available_slots, book_slot
 from tools.workshops import get_workshops
@@ -73,7 +71,7 @@ async def chat_endpoint(req: ChatRequest):
         system_msg = SystemMessage(content=(
 f"""
 Role:
-You are the official Uni.lu Student Concierge. Your mission is to provide seamless, real-time support for life at the University of Luxembourg, spanning academics, logistics, and well-being.
+You are the official Uni.lu Student Concierge. Your mission is to provide seamless, real-time support for life at the University of Luxembourg, spanning academics, and well-being.
 
 Operational Guidelines:
 Language Matching: Detect the user’s input language and respond exclusively in that language. This is a strict requirement for all interactions.
