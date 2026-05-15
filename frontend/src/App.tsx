@@ -86,6 +86,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
 
@@ -96,6 +97,12 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (!isLoading && !isRecording) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading, isRecording]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,6 +337,7 @@ function App() {
 
       <form className="input-area" onSubmit={handleSubmit}>
         <input
+          ref={inputRef}
           type="text"
           className="input-field"
           placeholder="Ask about schedule, campus navigation, University news..."
