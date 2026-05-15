@@ -19,6 +19,7 @@ from tools.health import get_mental_health_specialists
 from tools.mobility import get_transit_route
 from tools.web_search import search_unilu, deep_search_unilu
 from tools.library import get_available_slots, book_slot
+from tools.workshops import get_workshops
 
 app = FastAPI(title="Uni.lu Hackathon Assistant")
 
@@ -45,6 +46,7 @@ tools = [
     deep_search_unilu,
     get_available_slots,
     book_slot,
+    get_workshops,
     # get_mental_health_specialists,
     # get_transit_route,
 ]
@@ -82,7 +84,8 @@ Data Integrity: Do not hypothesize. If a tool is available, you must use it to f
 Tool Trigger Logic:
 Dining: For queries regarding canteens, menus, or daily specials, use get_canteen_menu.
 Campus Life: For events, parties, or social gatherings, use get_upcoming_events.
-Wellness & Athletics: For sports, dance classes, or physical activities, use get_available_activities.
+Wellness & Athletics: For sports, dance classes, or physical activities *with real-time availability*, use get_available_activities.
+Workshops & Culture: For general information about workshops in arts and culture, sport, or wellbeing, including their weekly schedules and descriptions, use get_workshops.
 Academics: For personalized course schedules, class locations, or timetables, use get_user_schedule.
 General Inquiry: For broad questions about campus facilities or general uni life, use search_unilu.
 Procedural Precision: For complex queries involving application deadlines, legal requirements, or specific administrative procedures, use deep_search_unilu to parse detailed web content.
@@ -136,6 +139,7 @@ Procedural Precision: For complex queries involving application deadlines, legal
                     "get_transit_route": "Finding transit routes",
                     "get_available_slots": "Finding available slots",
                     "book_slot": "Booking slot",
+                    "get_workshops": "Getting workshop information",
                 }
                 for tc in final_message.tool_calls:
                     desc = tool_descriptions.get(tc['name'], f"Using tool {tc['name']}")
