@@ -26,9 +26,9 @@ def request_workshops():
 
 
 
-def parse_uni_events(html):
+def parse_uni_workshops():
 
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(request_workshops(), 'html.parser')
 
     # Mapping expected output categories to keywords found in the HTML titles
     # This handles "Arts & culture", "Sport", and "Wellbeing"
@@ -84,5 +84,6 @@ def parse_uni_events(html):
                     "description": description,
                     "link": link
                 })
+    print(f"Successfully collected workshops")
 
     return results
