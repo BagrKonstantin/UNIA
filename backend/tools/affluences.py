@@ -8,13 +8,15 @@ from backend.parcers.affluences import request_sport_activities, get_available_e
 def get_available_activities(date) -> str:
     """
     Find available sport, fitness activities for a specific date in 'YYYY-MM-DD' format.
-    Returns the list of available activities.
+    Returns the list of available activities with their resource_id.
     """
     return get_available_events_with_times(request_sport_activities(date))
 
 @tool
 def book_resource(resource_id: str, date: str, start_time: str, end_time: str) -> str:
     """
+    Attention: To get resource_id get_available_activities tool first
+
     Books a sport, fitness activities with resource_id, date in 'YYYY-MM-DD' format and start and end time in 'HH:MM' format.
     USER HAVE TO CONFIRM RESERVATION VIA EMAIL.
     """
