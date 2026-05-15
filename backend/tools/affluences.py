@@ -7,8 +7,11 @@ from backend.parcers.affluences import request_sport_activities, get_available_e
 @tool
 def get_available_activities(date) -> str:
     """
-    Find available sport, fitness activities for a specific date in 'YYYY-MM-DD' format.
+    Use this tool whenever a user asks about classes/workshops ON A SPECIFIC DAY (e.g., "today", "Friday", "January 12th").
+    It checks real-time availability and allows for registration for sport, fitness, and wellbeing classes.
+    If a class is mentioned in the general workshops list (via get_workshops) but is not returned by this tool for the specified date, it means the class is unavailable or full for this day.
     Returns the list of available activities with their resource_id.
+    Don't show resource_id to the user.
     """
     return get_available_events_with_times(request_sport_activities(date))
 

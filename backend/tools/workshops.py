@@ -5,7 +5,9 @@ from langchain_core.tools import tool
 @tool
 def get_workshops(category: str = None) -> str:
     """
-    Get information about workshops at Uni.lu.
+    Get general information and weekly schedules about repeating classes and workshops at Uni.lu.
+    DO NOT use this tool if the user asks for classes/workshops on a specific day (e.g., "today", "tomorrow", "Friday"). 
+    For specific dates, use get_available_activities instead.
     Categories include: 'arts and culture', 'sport', 'wellbeing'.
     If category is provided, returns only workshops of that type.
     Otherwise, returns all workshops.
