@@ -40,8 +40,6 @@ tools = [
     get_event_details,
     search_unilu,
     deep_search_unilu,
-    # get_mental_health_specialists,
-    # get_transit_route,
 ]
 
 llm_with_tools = llm.bind_tools(tools)
@@ -121,8 +119,6 @@ async def chat_endpoint(req: ChatRequest):
                     "get_user_schedule": "Getting your schedule",
                     "search_unilu": "Searching uni.lu website",
                     "deep_search_unilu": "Deeply scanning uni.lu for specific details",
-                    "get_mental_health_specialists": "Finding health specialists",
-                    "get_transit_route": "Finding transit routes"
                 }
                 for tc in final_message.tool_calls:
                     desc = tool_descriptions.get(tc['name'], f"Using tool {tc['name']}")
