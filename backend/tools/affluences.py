@@ -7,17 +7,21 @@ from backend.parcers.affluences import request_sport_activities, get_available_e
 @tool
 def get_available_activities(date) -> str:
     """
-    Find available sport, fitness activities for a specific date in 'YYYY-MM-DD' format.
-    Returns the list of available activities.
+    Use this tool whenever a user asks about classes/workshops ON A SPECIFIC DAY (e.g., "today", "Friday", "January 12th").
+    It checks real-time availability and allows for registration for sport, fitness, and wellbeing classes.
+    If a class is mentioned in the general workshops list (via get_workshops) but is not returned by this tool for the specified date, it means the class is unavailable or full for this day.
+    Returns the list of available activities with their resource_id.
+    Don't show resource_id to the user.
     """
     return get_available_events_with_times(request_sport_activities(date))
 
 @tool
 def book_resource(resource_id: str, date: str, start_time: str, end_time: str) -> str:
     """
+    Attention: To get resource_id get_available_activities tool first
+
     Books a sport, fitness activities with resource_id, date in 'YYYY-MM-DD' format and start and end time in 'HH:MM' format.
-    Always confirm with the user after successful booking.
-    USER HAVE TO CONFIRM RESERVATION VIA EMAIL OR AFFLUENCE APP
+    USER HAVE TO CONFIRM RESERVATION VIA EMAIL.
     """
     response = register(resource_id, date, start_time, end_time)
     return response

@@ -104,10 +104,10 @@ def get_events_for_this_month():
             "title": title,
             "time": time,
             "location": location,
-            "category": category,
-            "description": description,
+            # "category": category,
+            # "description": description,
             "url": link,
-            "day_of_week": day_of_week
+            # "day_of_week": day_of_week
         })
 
     # Convert defaultdict to a standard dict for JSON serialization

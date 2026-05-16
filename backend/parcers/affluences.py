@@ -17,8 +17,6 @@ def request_sport_activities(data):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            with open("sport.html", "w", encoding="utf-8") as file:
-                file.write(response.text)
             return response.text
         else:
             print(f"Error: {response.status_code}")
@@ -28,6 +26,20 @@ def request_sport_activities(data):
         print(f"Error saving file: {e}")
 
 
+def request_slots(date, is_group_work: bool):
+    try:
+        url = f"https://affluences.com/en/sites/universite-du-luxembourg-1/luxembourg-learning-centre/reservation?type={3244 if is_group_work else 1948}&date={date}"
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            return response.text
+        else:
+            print(f"Error: {response.status_code}")
+            print(response.text)
+
+    except Exception as e:
+        print(f"Error saving file: {e}")
 
 
 def get_available_events_with_times(html):
@@ -66,8 +78,68 @@ def get_available_events_with_times(html):
                             available_events.append({
                                 'resource_id': obj.get('resource_id'),
                                 'name': obj.get('resource_name'),
-                                'duration': obj.get('granularity'),  # Added duration (in minutes)
+                                'duration': obj.get('granularity'),
                                 'times': start_times
+                            })
+
+                    # Search deeper in the dictionary
+                    for value in obj.values():
+                        find_available_resources(value)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        find_available_resources(item)
+
+            find_available_resources(data)
+        except (json.JSONDecodeError, Exception):
+            continue
+
+    # De-duplicate results by ID
+    unique_events = {}
+    for e in available_events:
+        unique_events[e['resource_id']] = e
+
+    return list(unique_events.values())
+
+
+def get_available_slots_with_times(html):
+    """
+    Extracts events marked as 'available' along with their specific start times and duration.
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+    available_events = []
+
+    scripts = soup.find_all('script')
+
+    for script in scripts:
+        if not script.string or '"resource_id"' not in script.string:
+            continue
+
+        try:
+            # Extract the JSON block
+            match = re.search(r'(\{.*\})', script.string, re.DOTALL)
+            if not match:
+                continue
+
+            data = json.loads(match.group(1))
+
+            def find_available_resources(obj):
+                if isinstance(obj, dict):
+                    # Check if this is a resource with availability
+                    if 'resource_id' in obj and obj.get('slots_state') == 'available':
+                        # Extract the list of available start times
+                        start_times = []
+                        if 'hours' in obj and isinstance(obj['hours'], list):
+                            for slot in obj['hours']:
+                                if slot.get('state') == 'available':
+                                    start_times.append(slot.get('hour'))
+
+                        if start_times:
+                            available_events.append({
+                                'resource_id': obj.get('resource_id'),
+                                'name': obj.get('resource_name'),
+                                'duration': obj.get('granularity'),
+                                'times': start_times,
+                                'capacity': obj.get('capacity')
                             })
 
                     # Search deeper in the dictionary

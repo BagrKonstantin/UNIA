@@ -199,7 +199,38 @@ body {
   color: #72777b;
 }
 
-.send-btn {
+.mic-btn {
+  background: #f8f9fa;
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mic-btn:hover {
+  background: #e8eaed;
+}
+
+.mic-btn.recording {
+  background: #ffeaec;
+  color: var(--accent-unilu-red);
+  border-color: var(--accent-unilu-red);
+  animation: pulse-recording 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-recording {
+  0% { box-shadow: 0 0 0 0 rgba(225, 60, 46, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(225, 60, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(225, 60, 46, 0); }
+}
+
+.send-btn, .stop-btn {
   background: var(--accent-unilu-red);
   color: white;
   border: none;
@@ -211,14 +242,14 @@ body {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.send-btn:hover {
+.send-btn:hover, .stop-btn:hover {
   background: #c33125;
 }
 
-.send-btn:active {
+.send-btn:active, .stop-btn:active {
   transform: scale(0.97);
 }
 
@@ -227,6 +258,7 @@ body {
   cursor: not-allowed;
   transform: none;
 }
+
 
 .tool-list {
   margin-top: 8px;
@@ -308,9 +340,63 @@ body {
     font-size: 0.95rem;
   }
 
-  .send-btn {
+  .send-btn, .stop-btn {
     width: 44px;
     height: 44px;
     flex-shrink: 0;
+  }
+
+}
+
+/* Suggestion Buttons Styles */
+.suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.suggestion-btn {
+  background: #ffffff;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent-unilu-blue);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  text-align: left;
+  flex: 1 1 calc(50% - 12px);
+  min-width: 200px;
+}
+
+.suggestion-btn:hover {
+  background: #fdf2f1;
+  color: var(--accent-unilu-red);
+  border-color: var(--accent-unilu-red);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(225, 60, 46, 0.08);
+}
+
+.suggestion-btn:active {
+  transform: translateY(0);
+}
+
+.suggestion-icon {
+  color: var(--accent-unilu-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .suggestion-btn {
+    flex: 1 1 100%;
   }
 }

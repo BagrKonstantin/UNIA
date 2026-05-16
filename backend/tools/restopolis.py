@@ -52,6 +52,27 @@ Um Weier: 7.30 – 15.00, meals: 11.30 – 14.00"""
 
 
 @tool
+def get_allergens():
+    """Returns allergens list"""
+    return """1: Céréales contenant du gluten (Blé, Seigle, Orge, Avoine, Épeautre, Kamut),
+2: Crustacés,
+3: Œufs,
+4: Poissons,
+5: Arachides,
+6: Soja,
+7: Lait (Lactose),
+8: Fruits à coque (Amandes, Noisettes, Noix, Pistaches, etc.),
+9: Céleri,
+10: Moutarde,
+11: Graines de sésame,
+12: Anhydride sulfureux et sulfites (>10mg/kg),
+13: Lupin,
+14: Mollusques
+"""
+
+
+
+@tool
 def get_canteen_menu(location: str = "Belval", date: str = datetime.today().strftime("%Y-%m-%d")) -> str:
     """
     Get the menu for a campus canteen (e.g. food in 'Belval', 'Kirchberg', 'Limpertsberg') for a specific date in 'YYYY-MM-DD' format.
@@ -59,22 +80,8 @@ def get_canteen_menu(location: str = "Belval", date: str = datetime.today().strf
     Returns the list of available meals.
 
     ALLERGEN POLICY: DO NOT mention allergens in your response if the user didn't ask about them. 
-    If the user states they have an allergy, you MUST use the returned allergens string and match their allergies with this allergen dictionary:
+    If the user states they have an allergy, you MUST use the returned allergens string and match their allergies with this allergen list.
 
-    1: Céréales contenant du gluten (Blé, Seigle, Orge, Avoine, Épeautre, Kamut),
-    2: Crustacés,
-    3: Œufs,
-    4: Poissons,
-    5: Arachides,
-    6: Soja,
-    7: Lait (Lactose),
-    8: Fruits à coque (Amandes, Noisettes, Noix, Pistaches, etc.),
-    9: Céleri,
-    10: Moutarde,
-    11: Graines de sésame,
-    12: Anhydride sulfureux et sulfites (>10mg/kg),
-    13: Lupin,
-    14: Mollusques
 
     Then completely filter out and DO NOT mention meals that the user cannot eat.
     """

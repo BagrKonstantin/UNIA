@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -7,16 +7,17 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Tool
 from langchain_ollama import ChatOllama
 import uuid
 import json
+import base64
 from datetime import datetime
 
 # Tool imports
 from tools.schedule import get_user_schedule
-from tools.restopolis import get_canteen_menu, get_information_about_canteens
+from tools.restopolis import get_canteen_menu, get_information_about_canteens, get_allergens
 from tools.affluences import get_available_activities, book_resource
 from tools.events import get_upcoming_events, get_event_details
-from tools.health import get_mental_health_specialists
-from tools.mobility import get_transit_route
 from tools.web_search import search_unilu, deep_search_unilu
+from tools.library import get_available_slots, book_slot
+from tools.workshops import get_workshops
 
 app = FastAPI(title="Uni.lu Hackathon Assistant")
 
@@ -34,12 +35,16 @@ tools = [
     get_user_schedule,
     get_canteen_menu,
     get_information_about_canteens,
+    get_allergens,
     get_available_activities,
     book_resource,
     get_upcoming_events,
     get_event_details,
     search_unilu,
     deep_search_unilu,
+    get_available_slots,
+    book_slot,
+    get_workshops,
 ]
 
 llm_with_tools = llm.bind_tools(tools)
@@ -62,19 +67,31 @@ async def chat_endpoint(req: ChatRequest):
         current_day = now.strftime("%A")
         
         system_msg = SystemMessage(content=(
-            "You are an AI assistant for university students at uni.lu. "
-            "You help students with schedules, answering questions about university life, accommodation, "
-            "finding places to eat via Restopolis, booking sports or library rooms via Affluences, "
-            "finding events, finding mental health consultants, and building transit routes via Mobiliteit. "
-            "Always use your tools to provide actual, helpful data. If you register or book something, confirm it. "
-            "CRITICAL REQUIREMENT: You must always reply in the exact same language that the user used to ask the question. "
-            "If the user asks about canteen, food you must use the get_canteen_menu tool. "
-            "If the user asks about events, parties, or activities, you must use the get_upcoming_events tool. "
-            "If the user asks about sport, dance or other sport related activities, you must use the get_available_activities tool. "
-            "If the user asks about classes, schedule, courses you must use the get_user_schedule tool."
-            "If the user asks a general question about the university or wants to find specific information not covered by other tools, use the search_unilu tool. "
-            "If the user asks about application deadlines, deep procedural details or specific requirements, use the deep_search_unilu tool to extract precise answers from website pages."
-            f"CRITICAL TIMING INFO: Today is {current_day}, {current_date}. If the user does not specify a date, ALWAYS assume they mean today."
+f"""
+Role:
+You are the official Uni.lu Student Concierge. Your mission is to provide seamless, real-time support for life at the University of Luxembourg, spanning academics, and well-being.
+
+Operational Guidelines:
+Language Matching: Detect the user’s input language and respond exclusively in that language. This is a strict requirement for all interactions.
+Temporal Context: Today is {current_day}, {current_date}. Unless a different date is explicitly mentioned, always execute tool calls and provide answers relative to today. To calculate dates like 'next Friday' or 'tomorrow', you must calculate the exact YYYY-MM-DD date based on today's date ({current_date}, which is a {current_day}).
+Action Confirmation: Whenever a tool successfully registers a booking or completes an action, provide a clear, concise confirmation message.
+Data Integrity: Do not hypothesize. If a tool is available, you must use it to fetch live data rather than relying on internal knowledge.
+
+Differences between Events and Workshops/Classes:
+- Events: Usually one-time occurrences or special occasions (parties, campus gatherings). Use get_upcoming_events.
+- Workshops/Classes: Repeating activities (e.g., sports, arts & culture, wellbeing classes). 
+- If a user asks about a specific day (e.g., "what classes are on next Friday?"), ALWAYS use get_available_activities to check real-time daily availability. 
+- Use get_workshops only for general information, browsing categories, or finding general weekly schedules.
+
+Tool Trigger Logic:
+Dining: For queries regarding canteens, menus, or daily specials, use get_canteen_menu.
+Campus Life (Events): For one-time events, parties, or social gatherings, use get_upcoming_events.
+Workshops & Classes: For general information and weekly schedules for repeating classes/workshops (arts, culture, sport, wellbeing), use get_workshops.
+Class Availability & Booking (Affluences): Use get_available_activities for checking availability or registering for classes/workshops on a specific day. If the user mentions a date or day of the week, this is the primary tool to use instead of get_workshops. If a class is listed in workshops but missing from get_available_activities for a given date, it means it is unavailable/full that day.
+Academics: For personalized course schedules, class locations, or timetables, use get_user_schedule.
+General Inquiry: For broad questions about campus facilities or general uni life, use search_unilu.
+Procedural Precision: For complex queries involving application deadlines, legal requirements, or specific administrative procedures, use deep_search_unilu to parse detailed web content.
+"""
         ))
         conversations[session_id] = [system_msg]
         
@@ -112,6 +129,7 @@ async def chat_endpoint(req: ChatRequest):
                 tool_descriptions = {
                     "get_canteen_menu": "Looking up the menu",
                     "get_information_about_canteens": "Checking canteen schedule",
+                    "get_allergens": "Getting allergens",
                     "get_upcoming_events": "Searching for events",
                     "get_event_details": "Getting event details",
                     "get_available_activities": "Searching for activities",
@@ -119,6 +137,9 @@ async def chat_endpoint(req: ChatRequest):
                     "get_user_schedule": "Getting your schedule",
                     "search_unilu": "Searching uni.lu website",
                     "deep_search_unilu": "Deeply scanning uni.lu for specific details",
+                    "get_available_slots": "Finding available slots",
+                    "book_slot": "Booking slot",
+                    "get_workshops": "Getting workshop information",
                 }
                 for tc in final_message.tool_calls:
                     desc = tool_descriptions.get(tc['name'], f"Using tool {tc['name']}")
@@ -150,6 +171,50 @@ async def chat_endpoint(req: ChatRequest):
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+@app.post("/api/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    audio_bytes = await file.read()
+    audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+    mime_type = "audio/wav"
+
+    system_msg = SystemMessage(content=(
+"""## Role
+You are a high-precision transcription correction engine specializing in University of Luxembourg (Uni.lu) terminology.
+
+## Objective
+Convert raw, potentially noisy speech-to-text input into a clean, grammatically correct plain-text transcript. Your priority is to correctly identify and spell university-specific entities.
+
+## Uni.lu Lexicon (Priority Correction)
+- Campuses: Belval, Kirchberg, Limpertsberg.
+- Buildings: Maison du Savoir (MSA), Maison des Arts et des Étudiants (MAE), Maison du Nombre, Maison de l'Innovation, Weicker Building.
+- Facilities: LLC (Luxembourg Learning Centre), "cube" (study room), Restopolis (canteens), SEVE, Guichet Étudiant.
+- Apps/Tech: Affluences (booking), Moodle.
+- Academic Units: FSTM, FDEF, FHSE, SnT, LCSB, C2DH.
+- User will probably ask about the menu, events, workshop, activities, schedule, library, etc.
+
+## Strict Output Rules
+1. Output ONLY the corrected transcript.
+2. Do NOT include Markdown formatting (no bolding, no headers).
+3. Do NOT add conversational responses, acknowledgments, or "Here is the transcript."
+4. Ensure proper capitalization of all University entities.
+5. Maintain the original language of the speaker (English) but standardize the technical Uni.lu terms.
+6. If a term is ambiguous, choose the one that fits the University context (e.g., if you hear "bell val," output "Belval").
+"""
+    ))
+    
+    message = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{audio_b64}"
+                }
+            }
+        ]
+    )
+    
+    response = llm.invoke([system_msg, message])
+    return {"text": response.content}
 
 if __name__ == "__main__":
     # Use the string "main:app" for reload to work correctly
