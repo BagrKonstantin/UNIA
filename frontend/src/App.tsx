@@ -69,10 +69,10 @@ function App() {
   ]);
 
   const SUGGESTIONS = [
-    { label: "Check Schedule", query: "What workshops or classes are available today?", icon: <Calendar size={18} /> },
-    { label: "Campus Events", query: "Tell me about upcoming events at the university.", icon: <GraduationCap size={18} /> },
-    { label: "Restopolis Menu", query: "What's on the menu at Restopolis today?", icon: <Utensils size={18} /> },
-    { label: "Study Spaces", query: "How busy are the study areas right now?", icon: <Users size={18} /> },
+    { label: "Check workshops", query: "What workshops or classes are available today?", icon: <Calendar size={18} /> },
+    { label: "Campus Events", query: "Tell me about upcoming events for the week.", icon: <GraduationCap size={18} /> },
+    { label: "Canteen Menu", query: "What's on the menu today?", icon: <Utensils size={18} /> },
+    { label: "Book a room", query: "Book a room in the library.", icon: <Users size={18} /> },
   ];
 
 
