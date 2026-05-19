@@ -29,6 +29,7 @@ app.add_middleware(
 )
 
 # LLM initialized with the specific Gemma version chosen
+# llm = ChatOllama(model="gemma4:e4b", temperature=1, top_p=0.95, top_k=64)
 llm = ChatOllama(model="gemma4:e4b", temperature=0)
 
 tools = [
@@ -86,6 +87,7 @@ Differences between Events and Workshops/Classes:
 Tool Trigger Logic:
 Dining: For queries regarding canteens, menus, or daily specials, use get_canteen_menu.
 Campus Life (Events): For one-time events, parties, or social gatherings, use get_upcoming_events.
+Library: Use get_available_slots for checking availability of study rooms, if user didn't mention group work, then is_group_work should be False. Use book_slot to book a room.
 Workshops & Classes: For general information and weekly schedules for repeating classes/workshops (arts, culture, sport, wellbeing), use get_workshops.
 Class Availability & Booking (Affluences): Use get_available_activities for checking availability or registering for classes/workshops on a specific day. If the user mentions a date or day of the week, this is the primary tool to use instead of get_workshops. If a class is listed in workshops but missing from get_available_activities for a given date, it means it is unavailable/full that day.
 Academics: For personalized course schedules, class locations, or timetables, use get_user_schedule.

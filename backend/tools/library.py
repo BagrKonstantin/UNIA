@@ -78,9 +78,10 @@ def round_up_30(time_str):
 
 
 @tool
-def get_available_slots(date, is_group_work: bool) -> str:
+def get_available_slots(date, is_group_work: bool = False) -> str:
     """
     Find available slots in the library for individual or group work for a specific date in 'YYYY-MM-DD' format.
+    If user didn't mention group work, then is_group_work should be False
     Returns the list of available slots.
     """
     return merge_time_slots(get_available_slots_with_times(request_slots(date, is_group_work)))
