@@ -103,7 +103,7 @@ def get_events_for_this_month():
         events_by_date[date_key].append({
             "title": title,
             "time": time,
-            "location": location,
+            # "location": location,
             # "category": category,
             # "description": description,
             "url": link,
